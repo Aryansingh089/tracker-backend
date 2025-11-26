@@ -1,4 +1,3 @@
-// backend/server.js
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -10,10 +9,12 @@ const cors = require("cors");
 const app = express();
 const server = http.createServer(app);
 
+const FRONTEND_ORIGIN = process.env.FRONTEND_URL || "*";
+
 // CORS
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: FRONTEND_ORIGIN,
     methods: ["GET", "POST"],
   })
 );
@@ -23,20 +24,19 @@ app.use(express.urlencoded({ extended: true }));
 
 // SOCKET.IO
 const io = new Server(server, {
-  cors: { origin: process.env.FRONTEND_URL || "http://localhost:5173" },
+  cors: {
+    origin: FRONTEND_ORIGIN,
+    methods: ["GET", "POST"]
+  }
 });
 
-// Memory session store
+// In-memory session store
 const sessions = new Map();
 
-// Create session (NO PHONE REQUIRED)
+// Create session
 app.post("/api/create-session", (req, res) => {
   const sessionId = crypto.randomBytes(16).toString("hex");
-
-  sessions.set(sessionId, {
-    allowed: false,
-  });
-
+  sessions.set(sessionId, { allowed: false });
   res.json({ sessionId });
 });
 
@@ -61,7 +61,6 @@ io.on("connection", (socket) => {
   socket.on("start-tracking", ({ sessionId }) => {
     const sess = sessions.get(sessionId);
     if (!sess) return;
-
     sess.allowed = true;
     sessions.set(sessionId, sess);
     console.log("Tracking started:", sessionId);
@@ -70,12 +69,12 @@ io.on("connection", (socket) => {
   socket.on("location-update", ({ sessionId, lat, lng }) => {
     const sess = sessions.get(sessionId);
     if (!sess || !sess.allowed) return;
-
     io.to(sessionId).emit("location", { lat, lng });
   });
 });
 
+// PORT LISTENER
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`🚀 Backend running on port ${PORT}`);
 });
