@@ -1,0 +1,11 @@
+{
+  "name": "phone-tracker-backend",
+  "version": "1.0.0",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "dotenv": "^16.4.0",
+    "twilio": "^4.22.0"
+  }
+}

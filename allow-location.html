@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Location Sharing</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+</head>
+
+<body>
+  <h2>Sharing Location…</h2>
+  <p id="status">Waiting for GPS...</p>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const sessionId = params.get("session");
+
+    // Auto-detect backend from current URL
+    const backend = window.location.origin.replace("http://", "https://");
+
+    const socket = io(backend, { transports: ["websocket"] });
+
+    socket.emit("start-tracking", { sessionId });
+
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        socket.emit("location-update", {
+          sessionId,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+
+        document.getElementById("status").textContent =
+          "Location sent: " + pos.coords.latitude + ", " + pos.coords.longitude;
+      },
+      (err) =>
+        document.getElementById("status").innerHTML =
+          "Error: " + err.message,
+      { enableHighAccuracy: true }
+    );
+  </script>
+</body>
+</html>
